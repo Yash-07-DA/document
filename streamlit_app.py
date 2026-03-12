@@ -33,25 +33,31 @@ else:
         document = uploaded_file.read().decode()
 
         prompt = f"""
-        Here's a document:
+Here is a document:
 
-        {document}
+{document}
 
-        ----------------
+----------------
 
-        Question: {question}
-        """
+Question: {question}
+"""
 
-        # ✅ NEW API
-        stream = client.responses.create(
-            model="gpt-4.1-mini",
-            input=prompt,
-            stream=True,
-        )
+        try:
 
-        def stream_text():
-            for event in stream:
-                if event.type == "response.output_text.delta":
-                    yield event.delta
+            stream = client.responses.create(
+                model="gpt-4o-mini",
+                input=prompt,
+                stream=True,
+            )
 
-        st.write_stream(stream_text())
+            def stream_text():
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        yield event.delta
+                    elif event.type == "response.error":
+                        yield f"Error: {event.error}"
+
+            st.write_stream(stream_text)
+
+        except Exception as e:
+            st.error(str(e))
